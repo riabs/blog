@@ -2,6 +2,8 @@ const express = require('express');
 const {randomBytes} = require('crypto');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const axios = require('axios');
+
 
 const app = express();
 app.use(bodyParser.json());
@@ -14,7 +16,7 @@ app.get('/posts', (req, res) => {
 });
 
 
-app.post('/posts', (req, res) => {
+app.post('/posts/create', async (req, res) => {
     const id = randomBytes(4).toString('hex');
 
     const {title} = req.body;
@@ -22,10 +24,26 @@ app.post('/posts', (req, res) => {
         id, title
     }
 
+
+    await axios.post('http://event-bus-srv:4005/events', {
+        type: "PostCreated", 
+        data: {
+            id, title
+        }
+    }).catch(error => {
+        console.log(error.message);
+    });;
+
     res.status(201).send(posts[id]);
 });
 
+app.post('/events', (req, res) => {
+    
+    console.log('Received Event', req.body.type);
+    res.send({});
+});
 
 app.listen(4000, () => {
+    console.log('version 0.0.2');
     console.log('listening to port 4000');
 });
